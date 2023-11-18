@@ -1,0 +1,23 @@
+[
+    {
+        "id": "someid",
+        "amount": 123123,
+        "data": {
+            "somekey": "somevalue"
+        }
+    },
+    {
+        "id": "someid",
+        "amount": 123123,
+        "data": {
+            "somekey": "somevalue"
+        }
+    },
+    {
+        "id": "someid2",
+        "amount": 123123,
+        "data": {
+            "somekey": "somevalue"
+        }
+    }
+]
