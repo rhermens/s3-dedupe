@@ -2,6 +2,7 @@ use std::{collections::HashMap, error::Error, io};
 
 use clap::Parser;
 use ext::Dotnotation;
+use glob::Pattern;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
@@ -56,12 +57,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         panic!("Invalid pattern, must end with .json");
     }
 
+    let pattern = Pattern::new(&args.pattern).expect("Invalid pattern");
     let bucket_url_parsed = Url::parse(&args.url).expect("Invalid bucket url");
 
     let mut results: Vec<Obj> = vec![];
     match bucket_url_parsed.scheme() {
         "s3" => {
-            for handle in s3::create_file_download_handles(&bucket_url_parsed, &args.pattern).await
+            for handle in s3::create_file_download_handles(&bucket_url_parsed, &pattern).await
             {
                 let mut objs = serde_json::from_slice::<Vec<Obj>>(
                     handle
@@ -82,7 +84,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         _ => panic!("Invalid bucket url"),
     }
 
-    let deduped = results.dedup_extract_by_key(&args.identifier);
+    log::info!("Deduplicating by key: {}", &args.identifier);
+    let deduped = results.dedup_extract_by_dotnotation(&args.identifier);
     log::info!("Found {} duplicates", results.len());
     log::info!("Deduped length: {}", deduped.len());
 
@@ -101,7 +104,7 @@ mod tests {
 
         let mut objects = serde_json::from_str::<Vec<Obj>>(&file_content).unwrap();
 
-        let result = objects.dedup_extract_by_key("id");
+        let result = objects.dedup_extract_by_dotnotation("id");
 
         assert_eq!(result.len(), 2);
     }
@@ -113,7 +116,7 @@ mod tests {
 
         let mut objects = serde_json::from_str::<Vec<Obj>>(&file_content).unwrap();
 
-        let result = objects.dedup_extract_by_key("data.somekey");
+        let result = objects.dedup_extract_by_dotnotation("data.somekey");
 
         assert_eq!(result.len(), 1);
     }

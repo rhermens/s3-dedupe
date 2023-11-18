@@ -5,10 +5,9 @@ use url::Url;
 
 static CLIENT: OnceCell<Client> = OnceCell::const_new();
 
-pub async fn create_file_download_handles(bucket_url: &Url, pattern: &str) -> Vec<JoinHandle<Result<GetObjectOutput, SdkError<GetObjectError>>>> {
+pub async fn create_file_download_handles(bucket_url: &Url, pattern: &Pattern) -> Vec<JoinHandle<Result<GetObjectOutput, SdkError<GetObjectError>>>> {
     let client = CLIENT.get_or_init(|| async {
-        let config = aws_config::load_from_env().await;
-        Client::new(&config)
+        Client::new(&aws_config::load_from_env().await)
     }).await;
 
     let bucket = bucket_url.host_str().expect("Invalid bucket url");
@@ -27,7 +26,7 @@ pub async fn create_file_download_handles(bucket_url: &Url, pattern: &str) -> Ve
             log::info!("Found object: {}", obj.key().expect("No key"));
             obj
         })
-        .filter(|obj| Pattern::new(pattern).expect("Invalid pattern").matches(obj.key().expect("No key")))
+        .filter(|obj| pattern.matches(obj.key().expect("No key")))
         .map(|object| {
             log::info!("Downloading object: {}", object.key().expect("No key"));
             client.get_object()

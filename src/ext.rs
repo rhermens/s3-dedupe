@@ -2,57 +2,43 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-pub trait Dotnotation: Clone {
+pub trait Dotnotation
+where
+    Self: Clone,
+{
     fn get_by_dotnotation(&self, key: &str) -> Option<&Value>;
 }
 
 impl Dotnotation for Value {
     fn get_by_dotnotation(&self, key: &str) -> Option<&Value> {
-        log::info!("Getting by dotnotation: {}", key);
-        let keys = key.split(".").collect::<Vec<&str>>();
-
-        let result = keys.iter()
+        match key
+            .split(".")
             .try_fold(self, |acc, key| match acc.get(key) {
                 Some(value) => Ok(value),
-                None => Err(())
-            });
-
-        match result {
+                None => Err(()),
+            }) {
             Ok(value) => Some(value),
-            Err(_) => None
+            Err(_) => None,
         }
     }
 }
 
 pub trait DedupExtract<T>
-where T: Dotnotation {
-    fn dedup_extract_by_key(&mut self, key: &str) -> Vec<T>;
+where
+    T: Dotnotation,
+{
+    fn dedup_extract_by_dotnotation(&mut self, key: &str) -> Vec<T>;
 }
 
 impl<T> DedupExtract<T> for Vec<T>
-where T: Dotnotation {
-    fn dedup_extract_by_key(&mut self, key: &str) -> Vec<T> {
-        log::info!("Deduplicating by key: {}", key);
-
+where
+    T: Dotnotation,
+{
+    fn dedup_extract_by_dotnotation(&mut self, key: &str) -> Vec<T> {
         let mut dedupe = HashMap::new();
-        self.retain(|obj| {
-            let value = match obj.get_by_dotnotation(key) {
-                Some(value) => value,
-                None => return false
-            };
-
-            let retained = dedupe.insert(
-                value.to_string(),
-                obj.to_owned()
-            );
-
-            match retained {
-                Some(_) => {
-                    log::info!("Found duplicate: {}", value.to_string());
-                    true
-                },
-                None => false
-            }
+        self.retain(|obj| match obj.get_by_dotnotation(key) {
+            Some(value) => dedupe.insert(value.to_string(), obj.to_owned()).is_some(),
+            None => false,
         });
 
         dedupe.values().cloned().into_iter().collect::<Vec<_>>()
