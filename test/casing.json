@@ -1,0 +1,14 @@
+[
+    {
+        "id": "someid2",
+        "amount": 123123,
+        "camelCase": "value",
+        "snake_case": "value"
+    },
+    {
+        "id": "someid3",
+        "amount": 123123,
+        "camelCase": "value",
+        "snake_case": "value"
+    }
+]

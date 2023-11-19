@@ -8,7 +8,6 @@ where
 {
     fn get_by_dotnotation(&self, key: &str) -> Option<&Value>;
 }
-
 impl Dotnotation for Value {
     fn get_by_dotnotation(&self, key: &str) -> Option<&Value> {
         match key
