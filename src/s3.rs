@@ -13,28 +13,23 @@ pub async fn create_file_download_handles(bucket_url: &Url, pattern: &Pattern) -
     let bucket = bucket_url.host_str().expect("Invalid bucket url");
     log::info!("Listing objects in bucket url: {}", bucket_url);
 
-    let objects = client.list_objects()
+    client.list_objects()
         .set_bucket(Some(bucket.to_string()))
         .set_prefix(Some(bucket_url.path().trim_start_matches("/").to_string()))
         .send()
         .await
-        .unwrap();
-
-    let res = objects.contents()
+        .expect("Failed to list contents")
+        .contents()
         .into_iter()
-        .map(|obj| {
-            log::info!("Found object: {}", obj.key().expect("No key"));
-            obj
-        })
-        .filter(|obj| pattern.matches(obj.key().expect("No key")))
-        .map(|object| {
-            log::info!("Downloading object: {}", object.key().expect("No key"));
+        .filter_map(|obj| obj.key().map_or(None, |k| pattern.matches(k).then_some(k)))
+        .map(|key| {
+            log::debug!("Downloading object: {}", key);
             client.get_object()
                 .set_bucket(Some(bucket.to_string()))
-                .set_key(Some(object.key().expect("No key").to_string()))
+                .set_key(Some(key.to_string()))
                 .send()
         })
         .map(|f| tokio::spawn(f))
-        .collect::<Vec<_>>();
-    res
+        .collect::<Vec<_>>()
 }
+

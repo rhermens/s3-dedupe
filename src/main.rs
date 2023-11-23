@@ -24,12 +24,16 @@ struct Args {
     // Unique object key
     #[arg(short, long, default_value = "id")]
     identifier: String,
+
+    // Log file
+    #[arg(short, long, default_value = "output.log")]
+    log: String
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    simple_logging::log_to_file("output.log", log::LevelFilter::Info).unwrap();
+    simple_logging::log_to_file(args.log, log::LevelFilter::Info).unwrap();
 
     if !args.pattern.ends_with(".json") {
         panic!("Invalid pattern, must end with .json");
@@ -60,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     _ => log::warn!("Invalid json object")
                 };
 
-                log::info!("Downloaded file..");
+                log::debug!("Downloaded file..");
             }
         }
         "file" => {
@@ -72,6 +76,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             log::info!("Reading files from path: {}", &pattern);
 
             for file in glob(&pattern).expect("Failed to read glob pattern") {
+                log::debug!("Reading: {:?}", file);
                 let file_content = fs::read_to_string(file.unwrap()).unwrap();
                 let parsed = serde_json::from_str::<Value>(&file_content);
 
