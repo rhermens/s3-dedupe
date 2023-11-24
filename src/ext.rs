@@ -1,12 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
+use chrono::DateTime;
 use serde_json::Value;
 
 pub trait Dotnotation
 where
-    Self: Clone,
+    Self: Clone + Display,
 {
-    fn get_by_dotnotation(&self, key: &str) -> Option<&Value>;
+    fn get_by_dotnotation(&self, key: &str) -> Option<&Self>;
 }
 impl Dotnotation for Value {
     fn get_by_dotnotation(&self, key: &str) -> Option<&Value> {
@@ -43,3 +44,11 @@ where
         dedupe.values().cloned().into_iter().collect::<Vec<_>>()
     }
 }
+
+pub trait SortByDotnotation<T>
+where
+    T: Dotnotation,
+{
+    fn sort_by_dotnotation(&mut self, key: &str);
+}
+
