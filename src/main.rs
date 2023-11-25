@@ -1,14 +1,12 @@
 use std::{error::Error, fs, io};
 
-use chrono::DateTime;
 use clap::Parser;
 use glob::{glob, Pattern};
+use s3_dedupe::ext::SortByDotnotation;
 use serde_json::Value;
 use url::Url;
 
 use ext::DedupExtract;
-
-use crate::ext::Dotnotation;
 
 mod ext;
 mod s3;
@@ -24,7 +22,7 @@ struct Args {
     #[arg(short, long, default_value = "*.json")]
     pattern: String,
 
-    // Unique object key
+    // Unique object key, supports dotnotation
     #[arg(short, long, default_value = "id")]
     identifier: String,
 
@@ -32,6 +30,7 @@ struct Args {
     #[arg(short, long, default_value = "output.log")]
     log: String,
 
+    // Sorts by key, supports dotnotation
     #[arg(short, long)]
     sort_by: Option<String>,
 }
@@ -104,18 +103,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     if args.sort_by.is_some() {
         let sort_key = args.sort_by.as_ref().expect("Invalid sort key").as_str();
-
-        deduped.sort_by(|a, b| {
-            let a_value = a.get_by_dotnotation(&sort_key).expect("Invalid sort by").as_str().expect("Invalid sort by");
-            let b_value = b.get_by_dotnotation(&sort_key).expect("Invalid sort by").as_str().expect("Invalid sort by");
-            let a_date = DateTime::parse_from_rfc3339(a_value);
-            let b_date = DateTime::parse_from_rfc3339(b_value);
-
-            match a_date {
-                Ok(date) => date.cmp(&b_date.unwrap()),
-                Err(_) => a_value.cmp(b_value)
-            }
-        });
+        deduped.sort_by_dotnotation(sort_key);
     }
 
     serde_json::to_writer(io::stdout(), &deduped).unwrap();

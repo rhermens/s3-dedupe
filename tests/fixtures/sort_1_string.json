@@ -1,0 +1,23 @@
+[
+    {
+        "id": "someid1",
+        "amount": 123123,
+        "data": {
+            "sort": "a"
+        }
+    },
+    {
+        "id": "someid3",
+        "amount": 123123,
+        "data": {
+            "sort": "c"
+        }
+    },
+    {
+        "id": "someid2",
+        "amount": 123123,
+        "data": {
+            "sort": "b"
+        }
+    }
+]

@@ -1,6 +1,5 @@
 use std::{collections::HashMap, fmt::Display};
 
-use chrono::DateTime;
 use serde_json::Value;
 
 pub trait Dotnotation
@@ -50,5 +49,19 @@ where
     T: Dotnotation,
 {
     fn sort_by_dotnotation(&mut self, key: &str);
+}
+
+impl<T> SortByDotnotation<T> for Vec<T>
+where 
+    T: Dotnotation,
+{
+    fn sort_by_dotnotation(&mut self, key: &str) {
+        self.sort_unstable_by(|a, b| {
+            let a_value = a.get_by_dotnotation(&key).expect("Invalid sort by").to_string();
+            let b_value = b.get_by_dotnotation(&key).expect("Invalid sort by").to_string();
+
+            a_value.cmp(&b_value)
+        });
+    }
 }
 
